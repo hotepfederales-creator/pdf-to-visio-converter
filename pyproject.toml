@@ -12,7 +12,11 @@ requires-python = ">=3.10"
 dependencies = ["pymupdf>=1.24.0"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dxf = ["ezdxf>=1.0"]
+dev = ["pytest>=8.0", "ezdxf>=1.0"]
+
+[project.urls]
+Repository = "https://github.com/hotepfederales-creator/pdf-to-visio-converter"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

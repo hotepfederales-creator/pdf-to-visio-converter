@@ -1,23 +1,53 @@
 """
-PDF to Visio Converter - Local Python Implementation
+PDF to Visio / CAD Converter
 
-Converts PDF engineering drawings to Visio-compatible SVG format.
-Uses PyMuPDF to extract vector graphics, text, and images.
+Converts PDF engineering drawings to multiple CAD and vector formats:
+  - SVG  (Scalable Vector Graphics — Visio-importable, universal)
+  - DXF  (AutoCAD Drawing Exchange Format — ezdxf, no external tools)
+  - EMF  (Enhanced Metafile — requires Inkscape)
+  - DWG  (AutoCAD native binary — requires ODA File Converter)
 
 Architecture:
-    PDF Input → PyMuPDF (extract) → SVG Output → Visio Import
+    PDF → PyMuPDF (extract paths + text) → format-specific writer
 
-Usage:
-    from pdf_to_visio import PDFConverter
+Quick start::
 
+    from pdf_to_visio import PDFConverter, convert_to_format
+
+    # SVG (always available)
     converter = PDFConverter("drawing.pdf")
     converter.to_svg("output_dir/")
+
+    # DXF (requires: pip install ezdxf)
+    convert_to_format("drawing.pdf", "output/", fmt="dxf")
+
+    # EMF (requires Inkscape on PATH)
+    convert_to_format("drawing.pdf", "output/", fmt="emf")
+
+    # DWG (requires ODA File Converter on PATH)
+    convert_to_format("drawing.pdf", "output/", fmt="dwg")
 """
 
 import pymupdf
 import os
 from pathlib import Path
 from typing import Optional, List, Tuple, Dict, Any
+
+from .dxf_converter import PDFtoDXFConverter
+from .emf_converter import PDFtoEMFConverter, inkscape_path
+from .dwg_converter import PDFtoDWGConverter, oda_converter_path, SUPPORTED_DWG_VERSIONS
+
+__all__ = [
+    "PDFConverter",
+    "PDFtoDXFConverter",
+    "PDFtoEMFConverter",
+    "PDFtoDWGConverter",
+    "ConversionResult",
+    "convert_pdf",
+    "convert_to_format",
+    "inkscape_path",
+    "oda_converter_path",
+]
 from dataclasses import dataclass
 
 
@@ -239,3 +269,91 @@ def convert_pdf(pdf_path: str, output_dir: str) -> ConversionResult:
     """
     converter = PDFConverter(pdf_path)
     return converter.to_svg(output_dir)
+
+
+def convert_to_format(
+    pdf_path: str,
+    output_dir: str,
+    fmt: str = "svg",
+    page: Optional[int] = None,
+    dxf_version: str = "R2010",
+    dwg_version: str = "ACAD2018",
+) -> List[str]:
+    """
+    Convert a PDF to the specified format and write files to output_dir.
+
+    Supported formats:
+        ``svg``  — always available (requires only pymupdf)
+        ``dxf``  — requires ``pip install ezdxf``
+        ``emf``  — requires Inkscape on PATH
+        ``dwg``  — requires ODA File Converter on PATH
+
+    Args:
+        pdf_path:    Path to input PDF.
+        output_dir:  Directory to write output files.
+        fmt:         Output format: ``"svg"``, ``"dxf"``, ``"emf"``, or ``"dwg"``.
+        page:        If given, convert only this page (0-based). Otherwise all pages.
+        dxf_version: DXF format version (DXF output only). E.g. ``"R2018"``.
+        dwg_version: DWG format version (DWG output only). E.g. ``"ACAD2018"``.
+
+    Returns:
+        List of absolute paths to the created output files.
+
+    Raises:
+        ValueError:       If ``fmt`` is not recognised.
+        FileNotFoundError: If ``pdf_path`` does not exist.
+        RuntimeError:     If a required external tool (Inkscape / ODA) is missing.
+
+    Example::
+
+        paths = convert_to_format("drawing.pdf", "out/", fmt="dxf")
+        print(paths)  # ['/.../out/drawing_page_1.dxf', ...]
+    """
+    fmt = fmt.lower().strip()
+
+    if fmt == "svg":
+        converter = PDFConverter(pdf_path)
+        if page is not None:
+            result = converter.to_svg(output_dir, pages=[page])
+        else:
+            result = converter.to_svg(output_dir)
+        stem = Path(pdf_path).stem
+        doc = pymupdf.open(pdf_path)
+        pages_done = list(range(doc.page_count)) if page is None else [page]
+        doc.close()
+        os.makedirs(output_dir, exist_ok=True)
+        return [
+            os.path.abspath(os.path.join(output_dir, f"{stem}_page_{p + 1}.svg"))
+            for p in pages_done
+        ]
+
+    if fmt == "dxf":
+        converter = PDFtoDXFConverter(pdf_path)
+        if page is not None:
+            stem = Path(pdf_path).stem
+            os.makedirs(output_dir, exist_ok=True)
+            out = os.path.join(output_dir, f"{stem}_page_{page + 1}.dxf")
+            return [converter.convert(out, page=page, dxf_version=dxf_version)]
+        return converter.convert_all_pages(output_dir, dxf_version=dxf_version)
+
+    if fmt == "emf":
+        converter = PDFtoEMFConverter(pdf_path)
+        if page is not None:
+            stem = Path(pdf_path).stem
+            os.makedirs(output_dir, exist_ok=True)
+            out = os.path.join(output_dir, f"{stem}_page_{page + 1}.emf")
+            return [converter.convert(out, page=page)]
+        return converter.convert_all_pages(output_dir)
+
+    if fmt == "dwg":
+        converter = PDFtoDWGConverter(pdf_path)
+        if page is not None:
+            stem = Path(pdf_path).stem
+            os.makedirs(output_dir, exist_ok=True)
+            out = os.path.join(output_dir, f"{stem}_page_{page + 1}.dwg")
+            return [converter.convert(out, page=page, dwg_version=dwg_version)]
+        return converter.convert_all_pages(output_dir, dwg_version=dwg_version)
+
+    raise ValueError(
+        f"Unknown format '{fmt}'. Supported formats: svg, dxf, emf, dwg"
+    )

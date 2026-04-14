@@ -1,42 +1,64 @@
-# PDF to Visio Converter
+# PDF to Visio / CAD Converter
 
-A local Python library for converting PDF engineering drawings to Visio-compatible formats.
+Convert PDF engineering drawings to SVG, DXF, EMF, and DWG formats.
 
 ## Installation
 
 ```bash
-pip install pymupdf
+pip install pymupdf          # SVG output (always required)
+pip install ezdxf            # DXF/DWG output
+# EMF: install Inkscape → https://inkscape.org/
+# DWG: install ODA File Converter → https://www.opendesign.com/guestfiles/oda_file_converter
 ```
 
 ## Quick Start
 
 ```python
-from pdf_to_visio import PDFConverter
+from pdf_to_visio import convert_to_format
 
-converter = PDFConverter("drawing.pdf")
-converter.to_svg("output_dir/")
-converter.to_svg_single("page_1.svg", page=0)
+# SVG — no external tools needed
+convert_to_format("drawing.pdf", "output/", fmt="svg")
+
+# DXF — requires ezdxf
+convert_to_format("drawing.pdf", "output/", fmt="dxf")
+
+# EMF — requires Inkscape on PATH
+convert_to_format("drawing.pdf", "output/", fmt="emf")
+
+# DWG — requires ODA File Converter on PATH
+convert_to_format("drawing.pdf", "output/", fmt="dwg")
+
+# Single page, specific version
+convert_to_format("drawing.pdf", "output/", fmt="dxf", page=0, dxf_version="R2018")
 ```
+
+## Format Details
+
+| Format | Class | Requires | Use case |
+|--------|-------|----------|----------|
+| SVG | `PDFConverter` | pymupdf only | Visio, browsers, universal |
+| DXF | `PDFtoDXFConverter` | ezdxf | AutoCAD, LibreCAD, BricsCAD |
+| EMF | `PDFtoEMFConverter` | Inkscape | Visio, Word, Windows native |
+| DWG | `PDFtoDWGConverter` | ODA File Converter | AutoCAD native binary |
 
 ## Architecture
 
 ```
-PDF Input → PyMuPDF (extract vectors/text) → SVG Output → Visio Import
+PDF → PyMuPDF (extract paths + text)
+         ├── SVG  → direct via get_svg_image()
+         ├── DXF  → ezdxf (LWPOLYLINE + TEXT entities)
+         ├── EMF  → SVG → Inkscape CLI
+         └── DWG  → DXF → ODA File Converter
 ```
-
-## Features
-
-- Vector graphics preservation
-- Text extraction with positioning
-- Multi-page PDF support
-- Batch conversion
-- Engineering drawing support
 
 ## Testing
 
 ```bash
 pytest tests/ -v
 ```
+
+15 tests covering SVG, DXF (entities, text, multi-page, version validation),
+EMF/DWG dependency detection, and the unified `convert_to_format()` API.
 
 ## License
 
