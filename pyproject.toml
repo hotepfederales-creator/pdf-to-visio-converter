@@ -13,13 +13,20 @@ dependencies = ["pymupdf>=1.24.0"]
 
 [project.scripts]
 pdf2cad = "pdf_to_visio.__main__:main"
+excel2visio = "pdf_to_visio.excel_cli:main"
 
 [project.optional-dependencies]
 dxf = ["ezdxf>=1.0"]
-dev = ["pytest>=8.0", "ezdxf>=1.0"]
+excel = ["openpyxl>=3.1"]
+visio = ["pywin32>=306; platform_system == 'Windows'"]
+dev = ["pytest>=8.0", "ruff>=0.8.0", "ezdxf>=1.0", "openpyxl>=3.1"]
 
 [project.urls]
 Repository = "https://github.com/hotepfederales-creator/pdf-to-visio-converter"
+
+[tool.setuptools.packages.find]
+include = ["pdf_to_visio*"]
+exclude = ["tests*", "visio_templates*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

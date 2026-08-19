@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="720" viewBox="0 0 1000 720">
+  <title>Connector Pinout Template</title>
+  <style>
+    .body{fill:#f8fafc;stroke:#334155;stroke-width:3}.pin{fill:#fff;stroke:#0f172a;stroke-width:2}
+    .table{fill:#ffffff;stroke:#cbd5e1;stroke-width:1}.head{fill:#e2e8f0}.label{font-family:Segoe UI,Arial,sans-serif;font-size:16px;fill:#0f172a}.small{font-size:12px;fill:#475569}
+  </style>
+  <text x="40" y="45" class="label" font-size="28" font-weight="700">Connector Pinout</text>
+  <rect x="85" y="95" width="360" height="210" rx="18" class="body"/>
+  <text x="265" y="135" text-anchor="middle" class="label" font-size="24" font-weight="700">J1</text>
+  <text x="265" y="162" text-anchor="middle" class="small">front face / mating view</text>
+  <g id="pins">
+    <circle cx="170" cy="205" r="16" class="pin"/><text x="170" y="211" text-anchor="middle" class="small">1</text>
+    <circle cx="235" cy="205" r="16" class="pin"/><text x="235" y="211" text-anchor="middle" class="small">2</text>
+    <circle cx="300" cy="205" r="16" class="pin"/><text x="300" y="211" text-anchor="middle" class="small">3</text>
+    <circle cx="365" cy="205" r="16" class="pin"/><text x="365" y="211" text-anchor="middle" class="small">4</text>
+    <circle cx="202" cy="255" r="16" class="pin"/><text x="202" y="261" text-anchor="middle" class="small">5</text>
+    <circle cx="267" cy="255" r="16" class="pin"/><text x="267" y="261" text-anchor="middle" class="small">6</text>
+    <circle cx="332" cy="255" r="16" class="pin"/><text x="332" y="261" text-anchor="middle" class="small">7</text>
+  </g>
+  <rect x="520" y="95" width="415" height="455" rx="8" class="table"/>
+  <rect x="520" y="95" width="415" height="42" rx="8" class="head"/>
+  <text x="540" y="122" class="label">Pin</text><text x="610" y="122" class="label">Signal</text><text x="755" y="122" class="label">Color</text><text x="850" y="122" class="label">Dest</text>
+  <g class="small">
+    <text x="540" y="172">1</text><text x="610" y="172">CAN_H</text><text x="755" y="172">Blue</text><text x="850" y="172">J2-A</text>
+    <text x="540" y="222">2</text><text x="610" y="222">CAN_L</text><text x="755" y="222">White</text><text x="850" y="222">J2-B</text>
+    <text x="540" y="272">3</text><text x="610" y="272">VBAT</text><text x="755" y="272">Red</text><text x="850" y="272">TP3</text>
+    <text x="540" y="322">4</text><text x="610" y="322">GND</text><text x="755" y="322">Black</text><text x="850" y="322">TP4</text>
+    <text x="540" y="372">5</text><text x="610" y="372">Shield</text><text x="755" y="372">Drain</text><text x="850" y="372">Chassis</text>
+  </g>
+  <line x1="520" y1="187" x2="935" y2="187" stroke="#e2e8f0"/><line x1="520" y1="237" x2="935" y2="237" stroke="#e2e8f0"/><line x1="520" y1="287" x2="935" y2="287" stroke="#e2e8f0"/><line x1="520" y1="337" x2="935" y2="337" stroke="#e2e8f0"/>
+  <rect x="85" y="390" width="360" height="160" rx="12" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="110" y="425" class="label">Notes</text>
+  <text x="110" y="455" class="small">• Define mating view orientation.</text>
+  <text x="110" y="482" class="small">• Include cavity plugs and NC pins.</text>
+  <text x="110" y="509" class="small">• Match this table to the Excel wire list.</text>
+</svg>

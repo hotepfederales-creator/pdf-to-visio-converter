@@ -155,10 +155,11 @@ class PDFtoEMFConverter:
     def _page_to_svg(self, page: int) -> bytes:
         """Render a PDF page to SVG bytes via PyMuPDF."""
         doc = pymupdf.open(self.pdf_path)
-        if page >= doc.page_count:
+        page_count = doc.page_count
+        if page < 0 or page >= page_count:
             doc.close()
             raise ValueError(
-                f"Page {page} is out of range (PDF has {doc.page_count} pages)"
+                f"Page {page} is out of range (PDF has {page_count} pages)"
             )
         page_obj = doc.load_page(page)
         svg_data = page_obj.get_svg_image()

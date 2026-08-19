@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="700" viewBox="0 0 1100 700">
+  <title>Breakout Box Front Panel Template</title>
+  <style>
+    .panel{fill:#e5e7eb;stroke:#111827;stroke-width:3}.cut{fill:#f8fafc;stroke:#334155;stroke-width:2}
+    .jack{fill:#fff;stroke:#0f172a;stroke-width:2}.red{fill:#fecaca}.black{fill:#d1d5db}.green{fill:#bbf7d0}.yellow{fill:#fef08a}
+    .label{font-family:Segoe UI,Arial,sans-serif;font-size:16px;fill:#0f172a}.small{font-size:12px;fill:#475569}
+  </style>
+  <text x="40" y="45" class="label" font-size="28" font-weight="700">Breakout Box Front Panel</text>
+  <rect x="80" y="90" width="940" height="500" rx="24" class="panel"/>
+  <text x="550" y="130" text-anchor="middle" class="label" font-size="24" font-weight="700">HARNESS BREAKOUT BOX</text>
+  <rect x="135" y="180" width="230" height="150" rx="12" class="cut"/>
+  <text x="250" y="210" text-anchor="middle" class="label">J1 INPUT</text>
+  <rect x="200" y="240" width="100" height="42" rx="7" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <circle cx="220" cy="261" r="5" fill="#1e40af"/><circle cx="240" cy="261" r="5" fill="#1e40af"/><circle cx="260" cy="261" r="5" fill="#1e40af"/><circle cx="280" cy="261" r="5" fill="#1e40af"/>
+  <text x="250" y="307" text-anchor="middle" class="small">D-sub / circular connector</text>
+  <rect x="735" y="180" width="230" height="150" rx="12" class="cut"/>
+  <text x="850" y="210" text-anchor="middle" class="label">J2 OUTPUT</text>
+  <rect x="800" y="240" width="100" height="42" rx="7" fill="#dbeafe" stroke="#1e40af" stroke-width="2"/>
+  <circle cx="820" cy="261" r="5" fill="#1e40af"/><circle cx="840" cy="261" r="5" fill="#1e40af"/><circle cx="860" cy="261" r="5" fill="#1e40af"/><circle cx="880" cy="261" r="5" fill="#1e40af"/>
+  <text x="850" y="307" text-anchor="middle" class="small">DUT / load connector</text>
+  <g id="banana-jack-grid">
+    <text x="550" y="197" text-anchor="middle" class="label">Test Points</text>
+    <circle cx="460" cy="235" r="17" class="jack red"/><text x="460" y="270" text-anchor="middle" class="small">TP1</text>
+    <circle cx="520" cy="235" r="17" class="jack black"/><text x="520" y="270" text-anchor="middle" class="small">TP2</text>
+    <circle cx="580" cy="235" r="17" class="jack green"/><text x="580" y="270" text-anchor="middle" class="small">TP3</text>
+    <circle cx="640" cy="235" r="17" class="jack yellow"/><text x="640" y="270" text-anchor="middle" class="small">TP4</text>
+    <circle cx="460" cy="315" r="17" class="jack red"/><text x="460" y="350" text-anchor="middle" class="small">TP5</text>
+    <circle cx="520" cy="315" r="17" class="jack black"/><text x="520" y="350" text-anchor="middle" class="small">TP6</text>
+    <circle cx="580" cy="315" r="17" class="jack green"/><text x="580" y="350" text-anchor="middle" class="small">TP7</text>
+    <circle cx="640" cy="315" r="17" class="jack yellow"/><text x="640" y="350" text-anchor="middle" class="small">TP8</text>
+  </g>
+  <rect x="165" y="405" width="190" height="70" rx="10" class="cut"/><text x="260" y="435" text-anchor="middle" class="label">Power</text><text x="260" y="458" text-anchor="middle" class="small">switch / fuse / LED</text>
+  <rect x="745" y="405" width="190" height="70" rx="10" class="cut"/><text x="840" y="435" text-anchor="middle" class="label">Spare Area</text><text x="840" y="458" text-anchor="middle" class="small">future connectors</text>
+  <rect x="80" y="620" width="940" height="48" rx="8" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="105" y="650" class="small">Duplicate jacks/switches in Visio as needed. Keep TP labels synchronized with the Excel wire list.</text>
+</svg>

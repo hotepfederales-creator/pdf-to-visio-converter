@@ -25,8 +25,6 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional
 
-from .dxf_converter import PDFtoDXFConverter
-
 # Common ODA File Converter installation paths
 _ODA_CANDIDATES = [
     "ODAFileConverter",
@@ -100,6 +98,8 @@ class PDFtoDWGConverter:
                 "Download free from: https://www.opendesign.com/guestfiles/oda_file_converter\n"
                 "After install, ensure 'ODAFileConverter' is on your PATH."
             )
+
+        from .dxf_converter import PDFtoDXFConverter
 
         self._dxf_converter = PDFtoDXFConverter(pdf_path)
 

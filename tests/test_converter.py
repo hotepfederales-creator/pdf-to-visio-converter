@@ -8,7 +8,7 @@ import shutil
 # Add parent to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from pdf_to_visio import PDFConverter, convert_pdf, ConversionResult
+from pdf_to_visio import PDFConverter, convert_pdf, convert_to_format
 
 
 def create_test_pdf(tmp_dir: str, content: str = "Test") -> str:
@@ -32,6 +32,33 @@ def create_test_pdf(tmp_dir: str, content: str = "Test") -> str:
     return pdf_path
 
 
+def create_wire_list_xlsx(tmp_dir: str) -> str:
+    """Create a minimal Excel harness wire list."""
+    from openpyxl import Workbook
+
+    excel_path = os.path.join(tmp_dir, "harness.xlsx")
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Harness"
+    sheet.append(
+        [
+            "From Connector",
+            "From Pin",
+            "To Connector",
+            "To Pin",
+            "Signal",
+            "Wire Color",
+            "AWG",
+            "Breakout Jack",
+        ]
+    )
+    sheet.append(["J1", "1", "J2", "A", "CAN_H", "Blue", "22", "TP1"])
+    sheet.append(["J1", "2", "J2", "B", "CAN_L", "White", "22", "TP2"])
+    workbook.save(excel_path)
+    workbook.close()
+    return excel_path
+
+
 def test_converter_initialization():
     """Test converter can be initialized with valid PDF."""
     tmp_dir = tempfile.mkdtemp()
@@ -52,6 +79,31 @@ def test_converter_invalid_file():
         assert False, "Should have raised FileNotFoundError"
     except FileNotFoundError:
         pass
+
+
+def test_svg_api_imports_without_ezdxf():
+    """SVG-only users can import the package without optional ezdxf installed."""
+    import subprocess
+
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    code = (
+        "import importlib.abc, sys\n"
+        "class BlockEzdxf(importlib.abc.MetaPathFinder):\n"
+        "    def find_spec(self, fullname, path=None, target=None):\n"
+        "        if fullname == 'ezdxf' or fullname.startswith('ezdxf.'):\n"
+        "            raise ModuleNotFoundError(fullname)\n"
+        "        return None\n"
+        "sys.meta_path.insert(0, BlockEzdxf())\n"
+        f"sys.path.insert(0, {repo_root!r})\n"
+        "import pdf_to_visio\n"
+        "assert pdf_to_visio.PDFConverter\n"
+        "assert pdf_to_visio.convert_pdf\n"
+    )
+
+    result = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=False
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_to_svg_conversion():
@@ -97,6 +149,31 @@ def test_extract_text():
         shutil.rmtree(tmp_dir)
 
 
+def test_negative_page_is_rejected():
+    """Negative pages are invalid, not aliases for the last page."""
+    tmp_dir = tempfile.mkdtemp()
+    pdf_path = create_test_pdf(tmp_dir, "Negative Page Test")
+    output_dir = tempfile.mkdtemp()
+
+    try:
+        converter = PDFConverter(pdf_path)
+        for operation in (converter.extract_text, converter.extract_drawings):
+            try:
+                operation(-1)
+                assert False, "Should have rejected negative page"
+            except ValueError as e:
+                assert "Page -1" in str(e)
+
+        try:
+            convert_to_format(pdf_path, output_dir, fmt="svg", page=-1)
+            assert False, "Should have rejected negative page"
+        except ValueError as e:
+            assert "Page -1" in str(e)
+    finally:
+        shutil.rmtree(tmp_dir)
+        shutil.rmtree(output_dir)
+
+
 def test_extract_drawings():
     """Test vector drawing extraction."""
     tmp_dir = tempfile.mkdtemp()
@@ -124,6 +201,77 @@ def test_convenience_function():
     finally:
         shutil.rmtree(tmp_dir)
         shutil.rmtree(output_dir)
+
+
+def test_load_connections_from_excel():
+    """Test Excel wire-list header aliases and row parsing."""
+    tmp_dir = tempfile.mkdtemp()
+    excel_path = create_wire_list_xlsx(tmp_dir)
+
+    try:
+        from pdf_to_visio import load_connections_from_excel
+
+        connections = load_connections_from_excel(excel_path, sheet="Harness")
+
+        assert len(connections) == 2
+        assert connections[0].source.connector == "J1"
+        assert connections[0].source.pin == "1"
+        assert connections[0].destination.connector == "J2"
+        assert connections[0].destination.pin == "A"
+        assert connections[0].signal == "CAN_H"
+        assert connections[0].breakout == "TP1"
+    finally:
+        shutil.rmtree(tmp_dir)
+
+
+def test_convert_excel_to_visio_svg():
+    """Test Excel wire list renders a Visio-importable SVG drawing."""
+    tmp_dir = tempfile.mkdtemp()
+    excel_path = create_wire_list_xlsx(tmp_dir)
+    output_path = os.path.join(tmp_dir, "harness.svg")
+
+    try:
+        from pdf_to_visio import convert_excel_to_visio
+
+        result = convert_excel_to_visio(excel_path, output_path, title="Bench Harness")
+
+        assert result == os.path.abspath(output_path)
+        with open(output_path, encoding="utf-8") as file:
+            svg = file.read()
+        assert "<svg" in svg
+        assert "Bench Harness" in svg
+        assert "J1 pin 1" in svg
+        assert "J2 pin A" in svg
+        assert "Breakout Box" in svg
+        assert "TP1" in svg
+    finally:
+        shutil.rmtree(tmp_dir)
+
+
+def test_excel_missing_required_columns():
+    """Test Excel import reports missing required wire-list columns."""
+    from openpyxl import Workbook
+
+    tmp_dir = tempfile.mkdtemp()
+    excel_path = os.path.join(tmp_dir, "bad.xlsx")
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.append(["From Connector", "From Pin"])
+    sheet.append(["J1", "1"])
+    workbook.save(excel_path)
+    workbook.close()
+
+    try:
+        from pdf_to_visio import load_connections_from_excel
+
+        try:
+            load_connections_from_excel(excel_path)
+            assert False, "Should have reported missing required columns"
+        except ValueError as e:
+            assert "Missing required Excel columns" in str(e)
+            assert "destination_connector" in str(e)
+    finally:
+        shutil.rmtree(tmp_dir)
 
 
 def test_multiple_pages():
@@ -167,7 +315,7 @@ def test_dxf_conversion():
     output_dir = tempfile.mkdtemp()
 
     try:
-        from pdf_to_visio import PDFtoDXFConverter, convert_to_format
+        from pdf_to_visio import PDFtoDXFConverter
 
         converter = PDFtoDXFConverter(pdf_path)
         out_path = os.path.join(output_dir, "out.dxf")

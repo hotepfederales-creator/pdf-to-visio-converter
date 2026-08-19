@@ -110,10 +110,11 @@ class PDFtoDXFConverter:
             )
 
         doc = pymupdf.open(self.pdf_path)
-        if page >= doc.page_count:
+        page_count = doc.page_count
+        if page < 0 or page >= page_count:
             doc.close()
             raise ValueError(
-                f"Page {page} is out of range (PDF has {doc.page_count} pages)"
+                f"Page {page} is out of range (PDF has {page_count} pages)"
             )
 
         page_obj = doc.load_page(page)
@@ -226,9 +227,7 @@ class PDFtoDXFConverter:
 
             self._flush_poly(msp, poly_pts)
 
-    def _flush_poly(
-        self, msp, pts: List[Tuple[float, float]]
-    ) -> None:
+    def _flush_poly(self, msp, pts: List[Tuple[float, float]]) -> None:
         """Write a polyline to modelspace if it has at least 2 points."""
         if len(pts) >= 2:
             msp.add_lwpolyline(pts)

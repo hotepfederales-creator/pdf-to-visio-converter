@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "cli-development": {
+      "source": "ilude/claude-code-config",
+      "sourceType": "github",
+      "skillPath": "skills/cli-development/SKILL.md",
+      "computedHash": "78ca58a1c8c0acb96c509183c3cd6c7b0c3bfa0a424f4a764d6c42576dd8e3ec"
+    },
+    "docs-workflow": {
+      "source": "ilude/claude-code-config",
+      "sourceType": "github",
+      "skillPath": "skills/docs-workflow/SKILL.md",
+      "computedHash": "9b39b1eb9d4d457abd4082ae54654cf19245baedbe78f900d8d1d9f40bd14a3f"
+    },
+    "python-testing": {
+      "source": "ilude/claude-code-config",
+      "sourceType": "github",
+      "skillPath": "skills/python-testing/SKILL.md",
+      "computedHash": "952d0a8d0c9c234579f00edd9f0a695bf8799540e40fd40dda7b21137828ab4a"
+    },
+    "python-workflow": {
+      "source": "ilude/claude-code-config",
+      "sourceType": "github",
+      "skillPath": "skills/python-workflow/SKILL.md",
+      "computedHash": "47c072395e1c8dc00daa63668abb12c7e9d08b07b863831bedecfe2603d806b4"
+    },
+    "testing-workflow": {
+      "source": "ilude/claude-code-config",
+      "sourceType": "github",
+      "skillPath": "skills/testing-workflow/SKILL.md",
+      "computedHash": "637c10fd3b7604cdec5ed46f35b8536d6cdab5ebbd2cb59d2beee77a67ddb492"
+    }
+  }
+}

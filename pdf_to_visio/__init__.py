@@ -28,14 +28,13 @@ Quick start::
     convert_to_format("drawing.pdf", "output/", fmt="dwg")
 """
 
-import pymupdf
+from dataclasses import dataclass
+from importlib import import_module
 import os
 from pathlib import Path
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Any, Dict, List, Optional
 
-from .dxf_converter import PDFtoDXFConverter
-from .emf_converter import PDFtoEMFConverter, inkscape_path
-from .dwg_converter import PDFtoDWGConverter, oda_converter_path, SUPPORTED_DWG_VERSIONS
+import pymupdf
 
 __all__ = [
     "PDFConverter",
@@ -45,10 +44,48 @@ __all__ = [
     "ConversionResult",
     "convert_pdf",
     "convert_to_format",
+    "convert_excel_to_visio",
+    "load_connections_from_excel",
+    "write_harness_svg",
+    "Endpoint",
+    "WireConnection",
     "inkscape_path",
     "oda_converter_path",
+    "SUPPORTED_DWG_VERSIONS",
 ]
-from dataclasses import dataclass
+
+_LAZY_EXPORTS = {
+    "PDFtoDXFConverter": (".dxf_converter", "PDFtoDXFConverter"),
+    "PDFtoEMFConverter": (".emf_converter", "PDFtoEMFConverter"),
+    "PDFtoDWGConverter": (".dwg_converter", "PDFtoDWGConverter"),
+    "inkscape_path": (".emf_converter", "inkscape_path"),
+    "oda_converter_path": (".dwg_converter", "oda_converter_path"),
+    "SUPPORTED_DWG_VERSIONS": (".dwg_converter", "SUPPORTED_DWG_VERSIONS"),
+    "convert_excel_to_visio": (".excel_converter", "convert_excel_to_visio"),
+    "load_connections_from_excel": (".excel_converter", "load_connections_from_excel"),
+    "write_harness_svg": (".excel_converter", "write_harness_svg"),
+    "Endpoint": (".excel_converter", "Endpoint"),
+    "WireConnection": (".excel_converter", "WireConnection"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    """Load optional converter exports only when they are requested."""
+    if name not in _LAZY_EXPORTS:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    module_name, attr_name = _LAZY_EXPORTS[name]
+    value = getattr(import_module(module_name, __name__), attr_name)
+    globals()[name] = value
+    return value
+
+
+def _page_range_error(page: int, page_count: int) -> str:
+    return f"Page {page} is out of range (PDF has {page_count} pages)"
+
+
+def _page_is_out_of_range(page: int, page_count: int) -> bool:
+    return page < 0 or page >= page_count
 
 
 @dataclass
@@ -142,8 +179,8 @@ class PDFConverter:
 
         # Convert each page
         for page_num in pages:
-            if page_num >= doc.page_count:
-                errors.append(f"Page {page_num} out of range")
+            if _page_is_out_of_range(page_num, doc.page_count):
+                errors.append(_page_range_error(page_num, doc.page_count))
                 continue
 
             try:
@@ -222,10 +259,11 @@ class PDFConverter:
             List of drawing path dictionaries
         """
         doc = pymupdf.open(self.pdf_path)
+        page_count = doc.page_count
 
-        if page >= doc.page_count:
+        if _page_is_out_of_range(page, page_count):
             doc.close()
-            raise ValueError(f"Page {page} out of range")
+            raise ValueError(_page_range_error(page, page_count))
 
         page_obj = doc.load_page(page)
         drawings = page_obj.get_drawings()
@@ -244,10 +282,11 @@ class PDFConverter:
             Plain text from the page
         """
         doc = pymupdf.open(self.pdf_path)
+        page_count = doc.page_count
 
-        if page >= doc.page_count:
+        if _page_is_out_of_range(page, page_count):
             doc.close()
-            raise ValueError(f"Page {page} out of range")
+            raise ValueError(_page_range_error(page, page_count))
 
         page_obj = doc.load_page(page)
         text = page_obj.get_text()
@@ -314,20 +353,28 @@ def convert_to_format(
     if fmt == "svg":
         converter = PDFConverter(pdf_path)
         if page is not None:
+            page_count = converter.get_page_count()
+            if _page_is_out_of_range(page, page_count):
+                raise ValueError(_page_range_error(page, page_count))
             result = converter.to_svg(output_dir, pages=[page])
         else:
             result = converter.to_svg(output_dir)
+        if not result.success:
+            detail = "; ".join(result.errors) or "no pages converted"
+            raise RuntimeError(f"SVG conversion failed: {detail}")
+
         stem = Path(pdf_path).stem
         doc = pymupdf.open(pdf_path)
         pages_done = list(range(doc.page_count)) if page is None else [page]
         doc.close()
-        os.makedirs(output_dir, exist_ok=True)
         return [
             os.path.abspath(os.path.join(output_dir, f"{stem}_page_{p + 1}.svg"))
             for p in pages_done
         ]
 
     if fmt == "dxf":
+        from .dxf_converter import PDFtoDXFConverter
+
         converter = PDFtoDXFConverter(pdf_path)
         if page is not None:
             stem = Path(pdf_path).stem
@@ -337,6 +384,8 @@ def convert_to_format(
         return converter.convert_all_pages(output_dir, dxf_version=dxf_version)
 
     if fmt == "emf":
+        from .emf_converter import PDFtoEMFConverter
+
         converter = PDFtoEMFConverter(pdf_path)
         if page is not None:
             stem = Path(pdf_path).stem
@@ -346,6 +395,8 @@ def convert_to_format(
         return converter.convert_all_pages(output_dir)
 
     if fmt == "dwg":
+        from .dwg_converter import PDFtoDWGConverter
+
         converter = PDFtoDWGConverter(pdf_path)
         if page is not None:
             stem = Path(pdf_path).stem
@@ -354,6 +405,4 @@ def convert_to_format(
             return [converter.convert(out, page=page, dwg_version=dwg_version)]
         return converter.convert_all_pages(output_dir, dwg_version=dwg_version)
 
-    raise ValueError(
-        f"Unknown format '{fmt}'. Supported formats: svg, dxf, emf, dwg"
-    )
+    raise ValueError(f"Unknown format '{fmt}'. Supported formats: svg, dxf, emf, dwg")
